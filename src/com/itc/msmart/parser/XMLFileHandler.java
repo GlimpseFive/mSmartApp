@@ -1,10 +1,8 @@
 package com.itc.msmart.parser;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -22,9 +20,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.XML;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,9 +35,10 @@ public class XMLFileHandler {
 	public static void main (String[] args){
 		XMLFileHandler obj = new XMLFileHandler();
 
-		obj.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
-	}
-	private BufferedReader bufferedReader = null;
+//		obj.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
+		obj.createUserLoginXML("user1", "pass", "MSMART", "98900");
+	}	
+	private static final Logger logger = Logger.getLogger(XMLFileHandler.class);
 
 	public JSONObject parseShipmentXML(String filepath){
 		JSONObject jsonObject = new JSONObject();
@@ -219,15 +218,13 @@ public class XMLFileHandler {
 			}			
 			
 			obj.put("shipments", shipments);
+			
 		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR : parseShipmentAttributes, while paring shipment XML. "+e.getMessage());		
 		} catch (XPathExpressionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR : parseShipmentAttributes, while paring shipment XML. "+e.getMessage());
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR : parseShipmentAttributes, while paring shipment XML. "+e.getMessage());
 		}
 		
 		return obj;
@@ -286,12 +283,17 @@ public class XMLFileHandler {
 							// GET confirm delivery
 							order.put("confirm_delivery", xPath.compile(releasepath+"/ReleaseHeader/FlexFieldStrings/Attribute5").evaluate(doc));
 							
+							// ADD order
+							orders.add(order);	
+							
 						}
 					}
+					
 				}
 
-				orders.add(order);				
+							
 			}
+			System.out.println("------------orders::"+orders.size());
 			obj.put("orders", orders);
 		}catch (DOMException e) {
 			// TODO Auto-generated catch block
@@ -337,7 +339,10 @@ public class XMLFileHandler {
 //		return jsonObject;		
 //	}
 
-	public DOMSource createUserLoginXML(String user, String password, String login_url, String mobile_number){
+	public String createUserLoginXML(String user, String password, String domain, String mobile){
+		
+		StringWriter writer = new StringWriter();
+		
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -352,7 +357,7 @@ public class XMLFileHandler {
 
 			//  UserName element
 			Element username = doc.createElement("UserName");
-			username.setTextContent(user);
+			username.setTextContent(domain+"."+user);
 			header.appendChild(username);
 
 			//  Password element
@@ -385,15 +390,18 @@ public class XMLFileHandler {
 
 			//  DomainName element
 			Element domainName = doc.createElement("DomainName");
+			domainName.setTextContent(domain);
 			gid.appendChild(domainName);
 
 
 			//  Xid element
 			Element xid = doc.createElement("Xid");
+			xid.setTextContent(user+"_"+mobile);
 			gid.appendChild(xid);
 
 			//  TransactionCode element
 			Element transactionCode = doc.createElement("TransactionCode");
+			transactionCode.setTextContent("IU");
 			contact.appendChild(transactionCode);
 
 
@@ -407,11 +415,12 @@ public class XMLFileHandler {
 
 			//  Telex element
 			Element telex = doc.createElement("Telex");
+			telex.setTextContent("Y");
 			contact.appendChild(telex);
 
 			//  CellPhone element
 			Element cellPhone = doc.createElement("CellPhone");
-			cellPhone.setTextContent(mobile_number);
+			cellPhone.setTextContent(mobile);
 			contact.appendChild(cellPhone);
 
 			//  FlexFieldStrings element
@@ -420,36 +429,37 @@ public class XMLFileHandler {
 
 			//  Attribute1 element
 			Element attb1 = doc.createElement("Attribute1");
+			attb1.setTextContent("Y");
 			flex.appendChild(attb1);
 
 
 			// write the content into xml file
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
+			
+			
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File("D:\\file.xml"));
+			
+//			StreamResult result = new StreamResult(new File("D:\\file.xml"));
+			StreamResult result = new StreamResult(writer);
 			
 			transformer.transform(source, result);
-
-			System.out.println("File saved!");
 			
-			return source;
+			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
+			
+			System.out.println("-------- writer::"+writer.toString());
 
 		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
 		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
 		} catch (TransformerConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());		
 		}
 		
-		return null;
+		return writer.toString();
 
 	}
 

@@ -1,67 +1,60 @@
 package com.itc.msmart.implementation;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
 
-public class Client {
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+public class Client {	
+	public static final String CONTENT_TYPE = "application/raw";
 
 	public static void main(String[] args) {
-    try {
-            
-            URL url = new URL("https://otm637.itcinfotech.com:4444/GC3/glog.integration.servlet.WMServlet");
-                        
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+		try {
 
-           
-           BufferedReader reader = new BufferedReader(new FileReader("D:\\file.xml"));
-           String         line = null;
-           StringBuilder  stringBuilder = new StringBuilder();
-           String         ls = System.getProperty("line.separator");
+			DefaultHttpClient httpClient = new DefaultHttpClient();
 
-           try {
-               while((line = reader.readLine()) != null) {
-                   stringBuilder.append(line);
-                   stringBuilder.append(ls);
-               }
-               
-           } finally {
-               reader.close();
-           }
-           System.out.println("-----------"+stringBuilder.toString());
-           
-           con.setRequestMethod("POST");
-           con.setDoInput(true);
-           con.setDoOutput(true);
-           DataOutputStream dos = new DataOutputStream(con.getOutputStream());
-           dos.writeBytes(stringBuilder.toString());
-           
-            
-           int responseCode = con.getResponseCode();
-           BufferedReader in = new BufferedReader(new InputStreamReader(
-                               con.getInputStream()));
-           String inputLine;
-           while ((inputLine = in.readLine()) != null) 
-               System.out.println(inputLine);
+			HttpPost postRequest = new HttpPost("https://otm637.itcinfotech.com:4444/GC3/glog.integration.servlet.WMServlet");
 
-           dos.flush();
-           dos.close();
-           in.close();
 
-            
-        }
-        catch ( MalformedURLException ex ) {
-            // a real program would need to handle this exception
-        }
-        catch ( IOException ex ) {
-            // a real program would need to handle this exception
-        }
-    
+			BufferedReader reader = new BufferedReader(new FileReader("E:\\MSMART_CUST1.xml"));
+			String         line = null;
+			StringBuilder  stringBuilder = new StringBuilder();
+			String         ls = System.getProperty("line.separator");
+
+			try {
+				while((line = reader.readLine()) != null) {
+					stringBuilder.append(line);
+					stringBuilder.append(ls);
+				}
+
+			} finally {
+				reader.close();
+			}
+			System.out.println("-----------"+stringBuilder.toString());
+
+			StringEntity body = new StringEntity(stringBuilder.toString());
+			body.setContentType(CONTENT_TYPE);
+
+			postRequest.setEntity(body);
+			HttpResponse esbResponse = httpClient.execute(postRequest);
+			if (esbResponse.getStatusLine().getStatusCode() == 200){
+				System.out.println("user login file has been posted to OTM");
+				System.out.println("response:"+esbResponse.toString());
+			}
+
+		}
+		catch ( MalformedURLException ex ) {
+			ex.printStackTrace();
+		}
+		catch ( IOException ex ) {			
+			ex.printStackTrace();
+		}
+
 
 	}
 
