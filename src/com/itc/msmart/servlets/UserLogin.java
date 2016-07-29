@@ -32,7 +32,8 @@ public class UserLogin extends HttpServlet {
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {	
+		System.out.println("--------------");
 		Map<String, String[]> paramMap = request.getParameterMap();		
 		ServerImp serverImp = new ServerImp();
 		JSONObject json = serverImp.callAction(paramMap);        

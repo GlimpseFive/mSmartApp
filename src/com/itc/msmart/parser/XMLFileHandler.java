@@ -3,6 +3,8 @@ package com.itc.msmart.parser;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -44,6 +46,10 @@ public class XMLFileHandler {
 		JSONObject jsonObject = new JSONObject();
 		try {
 			File inputFile = new File(filepath);
+			// wait till file gets created
+			while(!inputFile.exists()){
+				Thread.sleep(2000);
+			}
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(inputFile);
@@ -68,6 +74,11 @@ public class XMLFileHandler {
 		} catch (DOMException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally{
+//			new File(filepath).deleteOnExit();
 		}
 		return jsonObject;
 	}

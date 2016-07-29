@@ -1,7 +1,14 @@
 package com.itc.msmart.implementation;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Map;
+import java.util.Properties;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,12 +84,12 @@ public class ServerImp {
 			mobile = paramMap.get("mobile")[0];
 		}
 		
-		String role = ""; 
-		if(paramMap.get("role")[0] !=null){
-			role = paramMap.get("role")[0] ;
+		String url = ""; 
+		if(paramMap.get("url")[0] !=null){
+			url = paramMap.get("url")[0] ;
 		}
 		
-		logger.debug("user:"+user+"\n password:"+password+ "\n domain:"+domain+ "\n mobile:"+mobile+"\n role:"+role);
+		logger.debug("user:"+user+"\n password:"+password+ "\n domain:"+domain+ "\n mobile:"+mobile+"\n url:"+url);
 		
 		XMLFileHandler handler = new XMLFileHandler();
 		JSONObject json = new JSONObject();
@@ -91,22 +98,58 @@ public class ServerImp {
 			
 			// Create login XML file
 			String xml =  handler.createUserLoginXML(user, password, domain, mobile);
+			
+			// POST user login to OTM
+			postXML2OTM(url, xml);
+			
+			
 			// TODO : validation from OTM Server using created XML
-			if (user.equalsIgnoreCase("user1")){ //TODO: change with OTM Validation
-				json = handler.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
+			if (user.equalsIgnoreCase("CUST1") && domain.equalsIgnoreCase("MSMART")){ 
+				
+				//TODO: change with OTM Validation
+//				json = handler.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
+				Properties prop = PropertyUtil.getPropValues();	
+				String filepath = prop.getProperty("SHIPMENT_FILE_LOCATION")+domain+"."+user+".xml";
+				json = handler.parseShipmentXML(filepath);
+				
 			}else{
 				json.put("info", "fail"); // TODO: may change JSON
 			}
 
 			
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			logger.error("Error while creating user validation XML. "+e.getMessage());
 			return json;
 		}
 		
 		return json;
 		
+	}
+	
+	private void postXML2OTM(String url, String xml){
+		try {
+
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+			Properties prop = PropertyUtil.getPropValues();			
+			HttpPost postRequest = new HttpPost(prop.getProperty("OTMURL"));
+
+			StringEntity body = new StringEntity(xml);
+			body.setContentType("application/raw");
+
+			postRequest.setEntity(body);
+			HttpResponse esbResponse = httpClient.execute(postRequest);
+
+			if (esbResponse.getStatusLine().getStatusCode() == 200){
+				System.out.println("user login file has been posted to OTM");
+			}
+
+		}
+		catch ( MalformedURLException ex ) {
+			ex.printStackTrace();
+		}
+		catch ( IOException ex ) {			
+			ex.printStackTrace();
+		}
 	}
 	
 	public JSONObject addEvent(Map<String, String[]> paramMap){
