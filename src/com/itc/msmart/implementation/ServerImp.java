@@ -89,6 +89,8 @@ public class ServerImp {
 			url = paramMap.get("url")[0] ;
 		}
 		
+		System.out.println("user:"+user+"\n password:"+password+ "\n domain:"+domain+ "\n mobile:"+mobile+"\n url:"+url);
+		
 		logger.debug("user:"+user+"\n password:"+password+ "\n domain:"+domain+ "\n mobile:"+mobile+"\n url:"+url);
 		
 		XMLFileHandler handler = new XMLFileHandler();
@@ -110,6 +112,7 @@ public class ServerImp {
 //				json = handler.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
 				Properties prop = PropertyUtil.getPropValues();	
 				String filepath = prop.getProperty("SHIPMENT_FILE_LOCATION")+domain+"."+user+".xml";
+				System.out.println("---------- filepath for shipment XML ::"+filepath);
 				json = handler.parseShipmentXML(filepath);
 				
 			}else{
@@ -153,6 +156,9 @@ public class ServerImp {
 	}
 	
 	public JSONObject addEvent(Map<String, String[]> paramMap){
+		System.out.println("--------user:"+paramMap.get("user")[0]);
+		System.out.println("--------password:"+paramMap.get("password")[0]);
+		System.out.println("--------domain:"+paramMap.get("domain")[0]);
 		System.out.println("--------action:"+paramMap.get("action")[0]);
 		System.out.println("--------shipment_id:"+paramMap.get("shipment_id")[0]);
 		System.out.println("--------truck_no:"+paramMap.get("truck_no")[0]);
@@ -161,6 +167,8 @@ public class ServerImp {
 		System.out.println("--------current_location:"+paramMap.get("current_location")[0]);
 		System.out.println("--------current_dt_time:"+paramMap.get("current_dt_time")[0]);
 		System.out.println("--------remarks:"+paramMap.get("remarks")[0]);
+		
+		
 		JSONObject json = new JSONObject();
 		try {
 			json.put("info", "successful");

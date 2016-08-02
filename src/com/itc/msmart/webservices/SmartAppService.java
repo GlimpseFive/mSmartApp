@@ -74,13 +74,17 @@ public class SmartAppService {
 			Document doc = builder.parse( new InputSource( new StringReader( xml ) ) ); 
 			XPath xPath =  XPathFactory.newInstance().newXPath();
 			String username = xPath.compile("/Transmission/TransmissionHeader/UserName").evaluate(doc);
-
-			// create file using username
-			Properties prop = PropertyUtil.getPropValues();		
+		
+			Properties prop = PropertyUtil.getPropValues();	
+			// create director if does not exist
+			if(!new File(prop.getProperty("SHIPMENT_FILE_LOCATION")).exists()){
+				new File(prop.getProperty("SHIPMENT_FILE_LOCATION")).mkdirs();
+			}
 			
+			// create file using username
 			File file = new File (prop.getProperty("SHIPMENT_FILE_LOCATION")+username+".xml");
 			
-			if (!file.exists()) {
+			if (!file.exists()) {				
 				file.createNewFile();
 			}
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
@@ -88,7 +92,7 @@ public class SmartAppService {
 			bw.write(xml);
 			bw.close();
 
-			System.out.println("Done");
+			System.out.println("Done");			
 			
 			return true;
 		} catch (IOException e) {

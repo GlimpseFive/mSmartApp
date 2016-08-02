@@ -7,6 +7,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,16 +51,20 @@ public class XMLFileHandler {
 			while(!inputFile.exists()){
 				Thread.sleep(2000);
 			}
+			System.out.println("---- found shipment file");
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(inputFile);
 			doc.getDocumentElement().normalize();
 
 			jsonObject = parseDashboardAttributes(jsonObject, doc);
+			System.out.println("---- parseDashboardAttributes done");
 			
 			jsonObject = parseShipmentAttributes(jsonObject, doc);
+			System.out.println("---- parseShipmentAttributes done");
 			
 			jsonObject = parseOrderAttributes(jsonObject, doc);
+			System.out.println("---- parseOrderAttributes done");
 
 
 		} catch (ParserConfigurationException e) {
@@ -472,6 +477,321 @@ public class XMLFileHandler {
 		
 		return writer.toString();
 
+	}
+
+
+	public String addShipmentEventXML(Map<String, String[]> paramMap){
+		
+		String user = paramMap.get("user")[0];
+		String password = paramMap.get("password")[0];
+		String domain = paramMap.get("domain")[0];		
+		String shipment_id = paramMap.get("shipment_id")[0];
+		String truck_no = paramMap.get("truck_no")[0];
+		String event_type = paramMap.get("event_type")[0];
+		String stop_location =  paramMap.get("stop_location")[0];
+		String current_location = paramMap.get("current_location")[0];
+		String current_dt_time = paramMap.get("current_dt_time")[0];
+		String remarks = paramMap.get("remarks")[0];
+		String service_provider = paramMap.get("service_provider")[0];
+		String stopSequence =  paramMap.get("stopSequence")[0];
+		
+		
+		StringWriter writer = new StringWriter();
+		
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.newDocument();
+			// root element
+			Element rootElement = doc.createElement("Transmission");
+			doc.appendChild(rootElement);
+
+			//  TransmissionHeader element
+			Element header = doc.createElement("TransmissionHeader");
+			rootElement.appendChild(header);
+
+			//  UserName element
+			Element username = doc.createElement("UserName");
+			username.setTextContent(domain+"."+user);
+			header.appendChild(username);
+
+			//  Password element
+			Element pass = doc.createElement("Password");
+			pass.setTextContent(password);
+			header.appendChild(pass);
+
+			//  TransmissionBody element
+			Element body = doc.createElement("TransmissionBody");
+			rootElement.appendChild(body);
+
+			//  GLogXMLElement element
+			Element gLog = doc.createElement("GLogXMLElement");
+			body.appendChild(gLog);
+
+			//  Contact element
+			Element shipmentStatus = doc.createElement("ShipmentStatus");
+			gLog.appendChild(shipmentStatus);
+
+			// ServiceProviderAlias element
+			Element serviceProviderAlias = doc.createElement("ServiceProviderAlias");
+			shipmentStatus.appendChild(serviceProviderAlias);
+			
+			// ServiceProviderAliasQualifierGid element
+			Element serviceProviderAliasQualifierGid = doc.createElement("ServiceProviderAliasQualifierGid");
+			serviceProviderAlias.appendChild(serviceProviderAliasQualifierGid);
+			
+			// Gid element
+			Element gid = doc.createElement("Gid");
+			serviceProviderAliasQualifierGid.appendChild(gid);
+			
+			// Xid element
+			Element xid = doc.createElement("Xid");
+			xid.setTextContent("GLOG");
+			gid.appendChild(xid);
+
+			// ServiceProviderAliasValue element
+			Element serviceProviderAliasValue = doc.createElement("ServiceProviderAliasValue");
+			serviceProviderAliasValue.setTextContent(domain+"."+service_provider); // service provider need to add from app
+			serviceProviderAlias.appendChild(serviceProviderAliasValue);
+			
+			// ShipmentRefnum element
+			Element shipmentRefnum = doc.createElement("ShipmentRefnum");
+			shipmentStatus.appendChild(shipmentRefnum);
+			
+			// ShipmentRefnumQualifierGid element
+			Element shipmentRefnumQualifierGid = doc.createElement("ShipmentRefnumQualifierGid");
+			shipmentRefnum.appendChild(shipmentRefnumQualifierGid);
+						
+			// Gid element
+			Element gid1 = doc.createElement("Gid");
+			shipmentRefnumQualifierGid.appendChild(gid);
+
+			// Xid element
+			Element xid1 = doc.createElement("Xid");
+			xid1.setTextContent("GLOG");
+			gid1.appendChild(xid1);			
+
+			// ShipmentRefnumValue element
+			Element shipmentRefnumValue = doc.createElement("ShipmentRefnumValue");
+			shipmentRefnumValue.setTextContent(domain+"."+shipment_id);// shipment_id need to send from app
+			shipmentRefnum.appendChild(shipmentRefnumValue);
+			
+			// ShipmentStatusType element
+			Element shipmentStatusType = doc.createElement("ShipmentStatusType");
+			shipmentStatusType.setTextContent("Shipment");
+			shipmentStatus.appendChild(shipmentStatusType);
+			
+			// StatusLevel element
+			Element statusLevel = doc.createElement("StatusLevel");
+			shipmentStatus.appendChild(statusLevel);			
+			
+			// StatusCodeGid element
+			Element statusCodeGid = doc.createElement("StatusCodeGid");
+			shipmentStatus.appendChild(statusCodeGid);
+			
+			// Gid element
+			Element gid2 = doc.createElement("Gid");
+			statusCodeGid.appendChild(gid2);
+
+			// Xid element
+			Element xid2 = doc.createElement("Xid");
+			xid2.setTextContent(event_type);// need to send from app
+			gid2.appendChild(xid2);		
+			
+			// ResponsiblePartyGid element
+			Element responsiblePartyGid = doc.createElement("ResponsiblePartyGid");
+			shipmentStatus.appendChild(responsiblePartyGid);
+			
+			// Gid element
+			Element gid3 = doc.createElement("Gid");
+			responsiblePartyGid.appendChild(gid3);
+
+			// Xid element
+			Element xid3 = doc.createElement("Xid");
+			xid3.setTextContent("PLANNER");
+			gid3.appendChild(xid3);				
+
+			// EventDt element
+			Element eventDt = doc.createElement("EventDt");
+			shipmentStatus.appendChild(eventDt);
+
+			// GLogDate element
+			Element gLogDate = doc.createElement("GLogDate");
+			gLogDate.setTextContent(current_dt_time); // need to send from App
+			eventDt.appendChild(gLogDate);		
+
+			// SSStop element
+			Element SSStop = doc.createElement("SSStop");
+			shipmentStatus.appendChild(SSStop);
+
+			// SSStopSequenceNum element
+			Element SSStopSequenceNum = doc.createElement("SSStopSequenceNum");
+			SSStopSequenceNum.setTextContent(stopSequence); // how to get stop sequence?
+			SSStop.appendChild(SSStopSequenceNum);			
+			
+			// write the content into xml file
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+			
+			
+			DOMSource source = new DOMSource(doc);
+			
+//			StreamResult result = new StreamResult(new File("D:\\file.xml"));
+			StreamResult result = new StreamResult(writer);
+			
+			transformer.transform(source, result);
+			
+			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
+			
+			System.out.println("-------- writer::"+writer.toString());
+
+		} catch (DOMException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+		} catch (ParserConfigurationException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
+		} catch (TransformerConfigurationException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+		} catch (TransformerException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());		
+		}
+		
+		return writer.toString();
+
+	}
+	
+	public String addOrderReleaseEventXML(Map<String, String[]> paramMap){
+				
+		String order_no = paramMap.get("order_no")[0];
+		String current_dt_time = paramMap.get("current_dt_time")[0];
+		String current_location = paramMap.get("current_location")[0];
+		String remarks = paramMap.get("remarks")[0];
+		String user = paramMap.get("user")[0];
+		String password = paramMap.get("password")[0];
+		String domain = paramMap.get("domain")[0];
+		String delivery_status = paramMap.get("delivery_status")[0];
+		
+		StringWriter writer = new StringWriter();
+		
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.newDocument();
+			// root element
+			Element rootElement = doc.createElement("Transmission");
+			doc.appendChild(rootElement);
+
+			//  TransmissionHeader element
+			Element header = doc.createElement("TransmissionHeader");
+			rootElement.appendChild(header);
+
+			//  UserName element
+			Element username = doc.createElement("UserName");
+			username.setTextContent(domain+"."+user);
+			header.appendChild(username);
+
+			//  Password element
+			Element pass = doc.createElement("Password");
+			pass.setTextContent(password);
+			header.appendChild(pass);
+
+			//  TransmissionBody element
+			Element body = doc.createElement("TransmissionBody");
+			rootElement.appendChild(body);
+
+			//  GLogXMLElement element
+			Element gLog = doc.createElement("GLogXMLElement");
+			body.appendChild(gLog);
+
+			//  Contact element
+			Element shipmentStatus = doc.createElement("ShipmentStatus");
+			gLog.appendChild(shipmentStatus);
+			
+			//  StatusLevel element
+			Element statusLevel = doc.createElement("StatusLevel");
+			statusLevel.setTextContent("ORDER");
+			shipmentStatus.appendChild(statusLevel);
+			
+			
+			//  ReleaseRefnum element
+			Element releaseRefnum = doc.createElement("ReleaseRefnum");
+			shipmentStatus.appendChild(releaseRefnum);
+
+
+			//  ReleaseRefnumQualifierGid element
+			Element releaseRefnumQualifierGid = doc.createElement("ReleaseRefnumQualifierGid");
+			releaseRefnum.appendChild(releaseRefnumQualifierGid);
+
+			//  Gid element
+			Element gid = doc.createElement("Gid");
+			releaseRefnumQualifierGid.appendChild(gid);
+
+			//  Xid element
+			Element xid = doc.createElement("Xid");
+			xid.setTextContent("GLOG");
+			gid.appendChild(xid);
+
+			//  ReleaseRefnum element
+			Element releaseRefnumValue = doc.createElement("ReleaseRefnumValue");
+			releaseRefnumValue.setTextContent(domain+"."+order_no);
+			releaseRefnum.appendChild(releaseRefnumValue);
+			
+			//  StatusCodeGid element
+			Element statusCodeGid = doc.createElement("StatusCodeGid");
+			shipmentStatus.appendChild(statusCodeGid);
+
+			//  Gid element
+			Element gid1 = doc.createElement("Gid");
+			statusCodeGid.appendChild(gid1);
+
+			//  DomainName element
+			Element domainName = doc.createElement("DomainName");
+			gid1.appendChild(domainName);
+
+			//  Xid element
+			Element xid1 = doc.createElement("Xid");
+			xid1.setTextContent(delivery_status);
+			gid1.appendChild(xid1);
+			
+			//  EventDt element
+			Element eventDt = doc.createElement("EventDt");
+			shipmentStatus.appendChild(eventDt);
+
+			//  GLogDate element
+			Element gLogDate = doc.createElement("GLogDate");
+			gLogDate.setTextContent(current_dt_time);
+			eventDt.appendChild(gLogDate);
+
+			//  tZId element
+			Element tZId = doc.createElement("TZId");
+			eventDt.appendChild(tZId);
+			
+			//  TZOffset element
+			Element tZOffset = doc.createElement("TZOffset");
+			eventDt.appendChild(tZOffset);
+			// write the content into xml file
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+			
+			
+			DOMSource source = new DOMSource(doc);
+			StreamResult result = new StreamResult(writer);			
+			transformer.transform(source, result);
+			
+			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
+			
+			System.out.println("-------- writer::"+writer.toString());
+
+		} catch (DOMException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+		} catch (ParserConfigurationException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
+		} catch (TransformerConfigurationException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+		} catch (TransformerException e) {
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());		
+		}		
+	
+		return writer.toString();
 	}
 
 
