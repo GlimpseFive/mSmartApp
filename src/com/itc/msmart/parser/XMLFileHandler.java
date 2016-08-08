@@ -1,10 +1,8 @@
 package com.itc.msmart.parser;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.file.FileSystems;
-import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,14 +41,14 @@ public class XMLFileHandler {
 	}	
 	private static final Logger logger = Logger.getLogger(XMLFileHandler.class);
 
-	public JSONObject parseShipmentXML(String filepath){
+	public JSONObject parseShipmentXML(InputStream inputFile){
 		JSONObject jsonObject = new JSONObject();
 		try {
-			File inputFile = new File(filepath);
-			// wait till file gets created
-			while(!inputFile.exists()){
-				Thread.sleep(2000);
-			}
+//			File inputFile = new File(filepath);
+//			// wait till file gets created
+//			while(!inputFile.exists()){
+//				Thread.sleep(2000);
+//			}
 			System.out.println("---- found shipment file");
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -77,9 +75,6 @@ public class XMLFileHandler {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally{
@@ -486,9 +481,9 @@ public class XMLFileHandler {
 		String password = paramMap.get("password")[0];
 		String domain = paramMap.get("domain")[0];		
 		String shipment_id = paramMap.get("shipment_id")[0];
-		String truck_no = paramMap.get("truck_no")[0];
+//		String truck_no = paramMap.get("truck_no")[0];
 		String event_type = paramMap.get("event_type")[0];
-		String stop_location =  paramMap.get("stop_location")[0];
+//		String stop_location =  paramMap.get("stop_location")[0];
 		String current_location = paramMap.get("current_location")[0];
 		String current_dt_time = paramMap.get("current_dt_time")[0];
 		String remarks = paramMap.get("remarks")[0];
@@ -618,7 +613,21 @@ public class XMLFileHandler {
 			// GLogDate element
 			Element gLogDate = doc.createElement("GLogDate");
 			gLogDate.setTextContent(current_dt_time); // need to send from App
-			eventDt.appendChild(gLogDate);		
+			eventDt.appendChild(gLogDate);	
+			
+			//SSRemarks element
+			Element SSRemarks = doc.createElement("SSRemarks");
+			SSRemarks.setTextContent(remarks);
+			shipmentStatus.appendChild(SSRemarks);
+			
+			//FlexFieldStrings element
+			Element flexFieldStrings = doc.createElement("FlexFieldStrings");
+			shipmentStatus.appendChild(flexFieldStrings);
+			
+			//Attribute2 element
+			Element attribute2 = doc.createElement("Attribute2");
+			attribute2.setTextContent(current_location);
+			flexFieldStrings.appendChild(attribute2);
 
 			// SSStop element
 			Element SSStop = doc.createElement("SSStop");
@@ -768,6 +777,22 @@ public class XMLFileHandler {
 			//  TZOffset element
 			Element tZOffset = doc.createElement("TZOffset");
 			eventDt.appendChild(tZOffset);
+			
+			//  EventDt element
+			Element SSRemarks = doc.createElement("SSRemarks");
+			SSRemarks.setTextContent(remarks);
+			shipmentStatus.appendChild(SSRemarks);
+		
+			//  EventDt element
+			Element flexFieldStrings = doc.createElement("FlexFieldStrings");			
+			shipmentStatus.appendChild(flexFieldStrings);
+			
+			//Attribute2 element
+			Element attribute2 = doc.createElement("Attribute2");
+			attribute2.setTextContent(current_location);
+			shipmentStatus.appendChild(attribute2);
+			
+			
 			// write the content into xml file
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();

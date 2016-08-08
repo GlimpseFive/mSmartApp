@@ -20,7 +20,7 @@ public class Client {
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			Properties prop = PropertyUtil.getPropValues();
 			System.out.println("-----------OTMURL::"+prop.getProperty("OTMURL"));
-			HttpPost postRequest = new HttpPost(prop.getProperty("OTMURL"));
+			HttpPost postRequest = new HttpPost("https:\\otm637.itcinfotech.com:4444/GC3/glog.integration.servlet.WMServlet");
 
 
 			BufferedReader reader = new BufferedReader(new FileReader("E:\\MSMART_CUST1.xml"));
