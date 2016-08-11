@@ -1,15 +1,23 @@
 package com.itc.msmart.parser;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -33,22 +41,44 @@ import org.xml.sax.SAXException;
 
 
 public class XMLFileHandler {
+	
 	public static void main (String[] args){
 		XMLFileHandler obj = new XMLFileHandler();
-
-//		obj.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
-		obj.createUserLoginXML("user1", "pass", "MSMART", "98900");
+//		obj.createUserLoginXML("user1", "pass", "MSMART", "98900");
+		
+		try {
+			FileInputStream fio = new FileInputStream(new File("E:\\ship_group.xml"));
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(fio);
+			JSONObject jobj = new JSONObject();
+			
+//			jobj = obj.parseShipmentAttributes(jobj, doc);
+			jobj = obj.parseOrderAttributes(jobj, doc);
+			
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 	}	
+	
 	private static final Logger logger = Logger.getLogger(XMLFileHandler.class);
 
 	public JSONObject parseShipmentXML(InputStream inputFile){
 		JSONObject jsonObject = new JSONObject();
 		try {
-//			File inputFile = new File(filepath);
-//			// wait till file gets created
-//			while(!inputFile.exists()){
-//				Thread.sleep(2000);
-//			}
 			System.out.println("---- found shipment file");
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -142,8 +172,11 @@ public class XMLFileHandler {
 					if (location.getNodeType() == Node.ELEMENT_NODE) {
 						Element eElement = (Element) location;
 						String locationXid = eElement.getElementsByTagName("Xid").item(0).getTextContent();
-						if (temp.equalsIgnoreCase(locationXid)){
-							String carrier = eElement.getElementsByTagName("LocationName").item(0).getTextContent();
+						if (temp.equalsIgnoreCase(locationXid)){							
+							String carrier = "";
+							if(eElement.getElementsByTagName("LocationName").item(0) != null){
+								carrier = eElement.getElementsByTagName("LocationName").item(0).getTextContent();
+							}							
 							shipment.put("carrier", carrier);
 							break;
 						}
@@ -166,7 +199,7 @@ public class XMLFileHandler {
 				String startDate = (new StringBuilder()).append(str.substring(6, 8)).append(".").append(str.substring(4, 6)).append(".").append(str.substring(0, 4)).toString();
 				String startTime = (new StringBuilder()).append(str.substring(8, 10)).append(":").append(str.substring(10, 12)).toString();				
 				shipment.put("startDate", startDate);
-				shipment.put("startTime", startTime);
+				shipment.put("startTime", startTime);				
 				
 				// SET Destination Time				
 				NodeList stops = (NodeList)xPath.compile(shipmentpath + "/ShipmentStop").evaluate(doc, XPathConstants.NODESET);				
@@ -178,7 +211,7 @@ public class XMLFileHandler {
 				
 				// SET Delivery Status
 				nodepath = shipmentpath + "/ShipmentHeader/FlexFieldStrings/Attribute11";				
-				shipment.put("delivery_status", xPath.compile(nodepath).evaluate(doc));
+				shipment.put("delivery_status", xPath.compile(nodepath).evaluate(doc));				
 				
 				// SET Last Event
 				nodepath = shipmentpath + "/ShipmentHeader/FlexFieldStrings/Attribute4";
@@ -207,6 +240,7 @@ public class XMLFileHandler {
 				//SET Map location details
 				NodeList stoplist = (NodeList)xPath.compile(shipmentpath + "/ShipmentStop").evaluate(doc, XPathConstants.NODESET);				
 				ArrayList<HashMap<String, String>> mapLocations = new ArrayList<HashMap<String, String>>();
+				ArrayList<String> stopLocations = new ArrayList<String>();
 				for(int j=0; j<stoplist.getLength(); j++){
 
 					String ATA = xPath.compile(shipmentpath + "/ShipmentStop"+"["+String.valueOf(j+1)+"]"+"/ArrivalTime/EventTime/ActualTime/GLogDate").evaluate(doc);
@@ -222,8 +256,15 @@ public class XMLFileHandler {
 					tempMap.put("ETD", ETD);
 					tempMap.put("location", location);
 					mapLocations.add(tempMap);
+					
+					String stopSequence = xPath.compile(shipmentpath + "/ShipmentStop"+"["+String.valueOf(j+1)+"]"+"/StopSequence").evaluate(doc);
+					String stopLocation = xPath.compile(shipmentpath + "/ShipmentStop"+"["+String.valueOf(j+1)+"]"+"/LocationRef/LocationGid/Gid/Xid").evaluate(doc);
+					stopLocations.add(stopSequence+" "+stopLocation);					
 				}
 				shipment.put("map_locations",mapLocations);
+				
+				Collections.sort(stopLocations);
+				shipment.put("stop_location",stopLocations);
 				
 				shipments.add(shipment);				
 			}			
@@ -265,10 +306,13 @@ public class XMLFileHandler {
 						String str = xPath.compile(releasepath +"/ReleaseGid/Gid/Xid").evaluate(doc);
 						if (ordernumber.equalsIgnoreCase(str)){
 							order.put("order_number", ordernumber);
+//							System.out.println("-----ordernumber::"+ordernumber);
 							order.put("customer_order_number", xPath.compile(releasepath+"/ReleaseHeader/ReleaseName").evaluate(doc));
+//							System.out.println("-------customer_order_number::"+xPath.compile(releasepath+"/ReleaseHeader/ReleaseName").evaluate(doc));
 							
 							// GET Customer Name, contact person and contact number
 							String tempxid = xPath.compile(releasepath+"/ShipToLocationRef/LocationRef/LocationGid/Gid/Xid").evaluate(doc);
+//							System.out.println("----------tempxid::"+tempxid);
 							
 							NodeList locations = (NodeList)xPath.compile(shipmentpath + "/Location").evaluate(doc, XPathConstants.NODESET);
 							
@@ -277,23 +321,32 @@ public class XMLFileHandler {
 								
 								if(tempxid.equalsIgnoreCase(xPath.compile(locationpath+"/LocationGid/Gid/Xid").evaluate(doc)) &&
 										"Y".equalsIgnoreCase(xPath.compile(locationpath+"/Contact/IsPrimaryContact").evaluate(doc))){									
-									order.put("customer_name", xPath.compile(locationpath+"/Contact/FirstName").evaluate(doc));									
+									order.put("customer_name", xPath.compile(locationpath+"/Contact/FirstName").evaluate(doc));	
+									System.out.println("-------------customer name::"+xPath.compile(locationpath+"/Contact/FirstName").evaluate(doc));
+									break;
 								} else{
 									order.put("customer_name", "");
 								}
+							}
+							for(int l=0; l<locations.getLength(); l++){
+								String locationpath = shipmentpath+"/Location"+"["+String.valueOf(l+1)+"]";
 									
 								if (tempxid.equalsIgnoreCase(xPath.compile(locationpath+"/LocationGid/Gid/Xid").evaluate(doc))){
 									order.put("contact_person", xPath.compile(locationpath+"/Contact/FirstName").evaluate(doc));
 									order.put("contact_number", xPath.compile(locationpath+"/Contact/CellPhone").evaluate(doc));
+									break;
 								}
 							}
 							
 							// GET number of packages							
 							order.put("number_of_packages", xPath.compile(releasepath+"/TotalPackagedItemCount").evaluate(doc));
+//							System.out.println("-----number_of_packages::"+xPath.compile(releasepath+"/TotalPackagedItemCount").evaluate(doc));
 							
 							// GET confirm delivery
 							order.put("confirm_delivery", xPath.compile(releasepath+"/ReleaseHeader/FlexFieldStrings/Attribute5").evaluate(doc));
+//							System.out.println("--------confirm_delivery::"+xPath.compile(releasepath+"/ReleaseHeader/FlexFieldStrings/Attribute5").evaluate(doc));
 							
+//							System.out.println("---- JSON order::"+order);
 							// ADD order
 							orders.add(order);	
 							
@@ -304,7 +357,7 @@ public class XMLFileHandler {
 
 							
 			}
-			System.out.println("------------orders::"+orders.size());
+//			System.out.println("------------orders::"+orders.size());
 			obj.put("orders", orders);
 		}catch (DOMException e) {
 			// TODO Auto-generated catch block
@@ -320,35 +373,6 @@ public class XMLFileHandler {
 		return obj;
 	}
 	
-//	public JSONObject parseShipmentXML (String filepath) throws IOException{
-//		JSONObject jsonObject = null;
-//		try {
-//
-//			bufferedReader = new BufferedReader(new FileReader(filepath));
-//			StringBuilder responseStrBuilder = new StringBuilder();
-//
-//			String inputStr;
-//			while ((inputStr = bufferedReader.readLine()) != null) {
-//				responseStrBuilder.append(inputStr);
-//			}
-//
-//			jsonObject = XML.toJSONObject(responseStrBuilder.toString());			
-//
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();		
-//		} catch (JSONException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		finally {
-//			if (bufferedReader !=null){
-//				bufferedReader.close();
-//			}
-//		}
-//
-//		return jsonObject;		
-//	}
 
 	public String createUserLoginXML(String user, String password, String domain, String mobile){
 		
@@ -458,8 +482,6 @@ public class XMLFileHandler {
 			
 			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
 			
-			System.out.println("-------- writer::"+writer.toString());
-
 		} catch (DOMException e) {
 			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
 		} catch (ParserConfigurationException e) {
@@ -483,13 +505,35 @@ public class XMLFileHandler {
 		String shipment_id = paramMap.get("shipment_id")[0];
 //		String truck_no = paramMap.get("truck_no")[0];
 		String event_type = paramMap.get("event_type")[0];
-//		String stop_location =  paramMap.get("stop_location")[0];
+		String stop_location =  paramMap.get("stop_location")[0];
 		String current_location = paramMap.get("current_location")[0];
 		String current_dt_time = paramMap.get("current_dt_time")[0];
 		String remarks = paramMap.get("remarks")[0];
 		String service_provider = paramMap.get("service_provider")[0];
-		String stopSequence =  paramMap.get("stopSequence")[0];
-		
+		String stopSequence =  stop_location.substring(0, stop_location.indexOf(" "));
+		current_dt_time = changeDateFormat(current_dt_time);
+		System.out.println("---user::"+user);
+		System.out.println("password::"+password);
+		System.out.println("domain::"+domain);
+		System.out.println("shipment_id::"+shipment_id);
+		System.out.println("event_type::"+event_type);
+		System.out.println("stop_location:"+stop_location);
+		System.out.println("current_location::"+current_location);
+		System.out.println("current_dt_time::"+current_dt_time);
+		System.out.println("remarks::"+remarks);
+		System.out.println("service_provider::"+service_provider);
+		System.out.println("stopSequence::"+stopSequence);
+		if ("Gate In".equalsIgnoreCase(event_type)){
+			event_type = "GIN";
+		} else if("Gate Out".equalsIgnoreCase(event_type)){
+			event_type = "GOT";
+		} else if ("Reported at Gate".equalsIgnoreCase(event_type)){
+			event_type = "RAG";
+		} else if ("Vessel Arrival".equalsIgnoreCase(event_type)){
+			event_type = "VA";
+		} else if ("Vessel Departure".equalsIgnoreCase(event_type)){
+			event_type = "VD";
+		} 
 		
 		StringWriter writer = new StringWriter();
 		
@@ -546,7 +590,7 @@ public class XMLFileHandler {
 
 			// ServiceProviderAliasValue element
 			Element serviceProviderAliasValue = doc.createElement("ServiceProviderAliasValue");
-			serviceProviderAliasValue.setTextContent(domain+"."+service_provider); // service provider need to add from app
+			serviceProviderAliasValue.setTextContent(domain+"."+service_provider); 
 			serviceProviderAlias.appendChild(serviceProviderAliasValue);
 			
 			// ShipmentRefnum element
@@ -559,7 +603,7 @@ public class XMLFileHandler {
 						
 			// Gid element
 			Element gid1 = doc.createElement("Gid");
-			shipmentRefnumQualifierGid.appendChild(gid);
+			shipmentRefnumQualifierGid.appendChild(gid1);
 
 			// Xid element
 			Element xid1 = doc.createElement("Xid");
@@ -568,7 +612,7 @@ public class XMLFileHandler {
 
 			// ShipmentRefnumValue element
 			Element shipmentRefnumValue = doc.createElement("ShipmentRefnumValue");
-			shipmentRefnumValue.setTextContent(domain+"."+shipment_id);// shipment_id need to send from app
+			shipmentRefnumValue.setTextContent(shipment_id);
 			shipmentRefnum.appendChild(shipmentRefnumValue);
 			
 			// ShipmentStatusType element
@@ -590,7 +634,7 @@ public class XMLFileHandler {
 
 			// Xid element
 			Element xid2 = doc.createElement("Xid");
-			xid2.setTextContent(event_type);// need to send from app
+			xid2.setTextContent(event_type);
 			gid2.appendChild(xid2);		
 			
 			// ResponsiblePartyGid element
@@ -612,7 +656,7 @@ public class XMLFileHandler {
 
 			// GLogDate element
 			Element gLogDate = doc.createElement("GLogDate");
-			gLogDate.setTextContent(current_dt_time); // need to send from App
+			gLogDate.setTextContent(current_dt_time); 
 			eventDt.appendChild(gLogDate);	
 			
 			//SSRemarks element
@@ -635,7 +679,7 @@ public class XMLFileHandler {
 
 			// SSStopSequenceNum element
 			Element SSStopSequenceNum = doc.createElement("SSStopSequenceNum");
-			SSStopSequenceNum.setTextContent(stopSequence); // how to get stop sequence?
+			SSStopSequenceNum.setTextContent(stopSequence); 
 			SSStop.appendChild(SSStopSequenceNum);			
 			
 			// write the content into xml file
@@ -647,7 +691,7 @@ public class XMLFileHandler {
 			
 //			StreamResult result = new StreamResult(new File("D:\\file.xml"));
 			StreamResult result = new StreamResult(writer);
-			
+			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 			transformer.transform(source, result);
 			
 			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
@@ -655,13 +699,17 @@ public class XMLFileHandler {
 			System.out.println("-------- writer::"+writer.toString());
 
 		} catch (DOMException e) {
-			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());	
+			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
 			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
+			e.printStackTrace();
 		} catch (TransformerConfigurationException e) {
-			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());			
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
+			e.printStackTrace();
 		} catch (TransformerException e) {
-			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());		
+			logger.error("ERROR in createUserLoginXML, while creating XML for user login validation. "+e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return writer.toString();
@@ -678,6 +726,17 @@ public class XMLFileHandler {
 		String password = paramMap.get("password")[0];
 		String domain = paramMap.get("domain")[0];
 		String delivery_status = paramMap.get("delivery_status")[0];
+		current_dt_time = changeDateFormat(current_dt_time);
+		System.out.println("------------addOrderReleaseEventXML---------------");
+		System.out.println("---order_no::"+order_no);
+		System.out.println("---current_dt_time::"+current_dt_time);
+		System.out.println("---current_location::"+current_location);
+		System.out.println("---remarks::"+remarks);
+		System.out.println("---user::"+user);
+		System.out.println("---password::"+password);
+		System.out.println("---domain::"+domain);
+		System.out.println("---delivery_status::"+delivery_status);
+		System.out.println("---");
 		
 		StringWriter writer = new StringWriter();
 		
@@ -715,12 +774,6 @@ public class XMLFileHandler {
 			Element shipmentStatus = doc.createElement("ShipmentStatus");
 			gLog.appendChild(shipmentStatus);
 			
-			//  StatusLevel element
-			Element statusLevel = doc.createElement("StatusLevel");
-			statusLevel.setTextContent("ORDER");
-			shipmentStatus.appendChild(statusLevel);
-			
-			
 			//  ReleaseRefnum element
 			Element releaseRefnum = doc.createElement("ReleaseRefnum");
 			shipmentStatus.appendChild(releaseRefnum);
@@ -743,6 +796,11 @@ public class XMLFileHandler {
 			Element releaseRefnumValue = doc.createElement("ReleaseRefnumValue");
 			releaseRefnumValue.setTextContent(domain+"."+order_no);
 			releaseRefnum.appendChild(releaseRefnumValue);
+
+			//  StatusLevel element
+			Element statusLevel = doc.createElement("StatusLevel");
+			statusLevel.setTextContent("ORDER");
+			shipmentStatus.appendChild(statusLevel);
 			
 			//  StatusCodeGid element
 			Element statusCodeGid = doc.createElement("StatusCodeGid");
@@ -754,6 +812,7 @@ public class XMLFileHandler {
 
 			//  DomainName element
 			Element domainName = doc.createElement("DomainName");
+			domainName.setTextContent(domain);
 			gid1.appendChild(domainName);
 
 			//  Xid element
@@ -771,12 +830,12 @@ public class XMLFileHandler {
 			eventDt.appendChild(gLogDate);
 
 			//  tZId element
-			Element tZId = doc.createElement("TZId");
-			eventDt.appendChild(tZId);
+//			Element tZId = doc.createElement("TZId");
+//			eventDt.appendChild(tZId);
 			
 			//  TZOffset element
-			Element tZOffset = doc.createElement("TZOffset");
-			eventDt.appendChild(tZOffset);
+//			Element tZOffset = doc.createElement("TZOffset");
+//			eventDt.appendChild(tZOffset);
 			
 			//  EventDt element
 			Element SSRemarks = doc.createElement("SSRemarks");
@@ -790,7 +849,7 @@ public class XMLFileHandler {
 			//Attribute2 element
 			Element attribute2 = doc.createElement("Attribute2");
 			attribute2.setTextContent(current_location);
-			shipmentStatus.appendChild(attribute2);
+			flexFieldStrings.appendChild(attribute2);
 			
 			
 			// write the content into xml file
@@ -799,7 +858,8 @@ public class XMLFileHandler {
 			
 			
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(writer);			
+			StreamResult result = new StreamResult(writer);	
+			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 			transformer.transform(source, result);
 			
 			logger.debug("DEBUG: createUserLoginXML, user login XML :"+writer.toString());
@@ -817,6 +877,22 @@ public class XMLFileHandler {
 		}		
 	
 		return writer.toString();
+	}
+	
+	private String changeDateFormat(String date){
+
+		String OLD_FORMAT = "dd.M.yyyy h:mm a"; 
+		String NEW_FORMAT = "yyyyMMddHHmmss";
+		SimpleDateFormat olddate = new SimpleDateFormat(OLD_FORMAT);
+		SimpleDateFormat newdate = new SimpleDateFormat(NEW_FORMAT);
+		Date old = new Date();
+		try {
+			old = olddate.parse(date);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return newdate.format(old);
 	}
 
 

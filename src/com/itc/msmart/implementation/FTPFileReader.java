@@ -16,7 +16,7 @@ import org.apache.commons.net.ftp.FTPReply;
 public class FTPFileReader {
 	public static void main(String[] args){
 		FTPFileReader reader = new FTPFileReader();
-		reader.readShipmentData("MSMART", "CUST1", "9215934823");
+		reader.readShipmentData("MSMART", "CUST1", "9564589411");
 	}
 	
 	public String readShipmentData(String domain, String user, String mobile_number){
@@ -25,11 +25,13 @@ public class FTPFileReader {
 			FTPClient ftp = new FTPClient();
 			Properties prop = PropertyUtil.getPropValues();
 			String serverAddress = prop.getProperty("FTP_SERVER_ADDRESS").trim();
-//			String serverAddress = "speedtest.tele2.net";
+//			String serverAddress = "Otm637.itcinfotech.com";
 			String userId = prop.getProperty("userId").trim();
             String password = prop.getProperty("password").trim();
             String remoteDirectory = prop.getProperty("FTP_Directory").trim();
-            int port = Integer.valueOf(prop.getProperty("FTP_SERVER_PORT").trim());
+//            String remoteDirectory= "/u01/MobileApp";
+//            int port = Integer.valueOf(prop.getProperty("FTP_SERVER_PORT").trim());
+            int port = 21;
 			
 			ftp.connect(serverAddress, port);
 			System.out.println("-----------loging::"+ftp.login(userId, password));
@@ -86,14 +88,15 @@ public class FTPFileReader {
             Collections.sort(fileNames);
 //            FileInputStream fio = new FileInputStream(new File(fileNames.get(fileNames.size()-1)));
 //            BufferedInputStream io = new BufferedInputStream(fio);
+            System.out.println("--------"+fileNames.size());
             InputStream inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
             
-            String line ;
-            while ((line = br.readLine())!= null){
-            	sb.append(line);
-            }
-            
+//            String line ;
+//            while ((line = br.readLine())!= null){
+//            	sb.append(line);
+//            }
+//            
             ftp.logout();
             ftp.disconnect();
 

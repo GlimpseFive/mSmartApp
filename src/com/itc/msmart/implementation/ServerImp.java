@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -23,6 +24,50 @@ import org.json.JSONObject;
 import com.itc.msmart.parser.XMLFileHandler;
 
 public class ServerImp {
+	
+	public static void main(String[] args){
+		Map<String, String[]> map = new HashMap<String, String[]>();
+		String[] cust = {"CUST1"};
+		String[] pass = {"CHANGEME"};
+		String[] domain = {"MSMART"};
+		String[] mobile = {"9215934823"};
+		String[] url = {"https://otm637.itcinfotech.com:4444/GC3/glog.webserver.servlet.umt.Login"};
+		String[] shipment_id = {"S20160704-0002"};		
+		String[] event_type = {"Vessel Arrival"};		
+		String[] current_location = {"INNSA"};
+		String[] current_dt_time = {"11.8.2016 12:05 PM"};
+		String[] remarks = {"Remark"};
+		String[] service_provider = {"MATAJI_TRANSPORTERS"};
+		String[] stopSequence = {"1"};
+		String[] order_no = {"SO-20160504-0003"};
+		String[] delivery_status = {"CONFIRMED_DELIVERY"};
+		String[] stop_location = {"1 PUN"};
+		
+		
+		map.put("user", cust);
+		map.put("password", pass);
+		map.put("domain", domain);
+		map.put("mobile", mobile);
+		map.put("url", url);
+		map.put("shipment_id", shipment_id);
+		map.put("event_type", event_type);
+		map.put("current_location", current_location);
+		map.put("current_dt_time", current_dt_time);
+		map.put("remarks", remarks);
+		map.put("service_provider", service_provider);
+		map.put("stopSequence", stopSequence);
+		map.put("order_no", order_no);
+		map.put("delivery_status", delivery_status);
+		map.put("stop_location", stop_location);
+		
+		ServerImp obj = new ServerImp();
+		
+//		obj.validateUser(map);
+		obj.addShipmentEvent(map);
+//		obj.setDeliveryStatus(map);
+		
+	}
+	
 	private String user_validation = "user_validation"; 
 	private String addEvent = "addEvent";
 	private String delivery_status = "delivery_status";
@@ -30,11 +75,12 @@ public class ServerImp {
 	
 	public JSONObject callAction(Map<String, String[]> paramMap){
 		String action = paramMap.get("action")[0];
+		System.out.println("------action::"+action);
 		JSONObject obj = new JSONObject();
 		if (user_validation.equalsIgnoreCase(action)){
 			obj = validateUser(paramMap);
-		} else if (addEvent.equalsIgnoreCase(action)){
-			obj = addEvent(paramMap);
+		} else if (addEvent.equalsIgnoreCase(action)){			
+			obj = addShipmentEvent(paramMap);
 		} else if (delivery_status.equalsIgnoreCase(action)){
 			obj = setDeliveryStatus(paramMap);
 		}
@@ -43,57 +89,31 @@ public class ServerImp {
 		
 	}
 	
-//	public JSONObject validateUser(Map<String, String[]> paramMap){
-//		System.out.println("------- user::"+paramMap.size());
-//		String username = paramMap.get("user")[0];
-//		System.out.println("------- password::"+paramMap.get("password")[0]);
-//	
-//		XMLFileHandler handler = new XMLFileHandler();
-//		JSONObject json = new JSONObject();
-//		try {
-//			if ( username!=null ){
-//				DOMSource source =  handler.createUserLoginXML(username, "pass", "http://test", "90000");
-//				// TODO : validation from OTM Server using created XML
-//				if (username.equalsIgnoreCase("user1")){ //TODO: change with OTM Validation					
-//					json = handler.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
-//				}else{
-//					json.put("info", "fail"); // TODO: may change JSON
-//				}
-//				
-//			}
-//		} catch (JSONException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		return json;
-//	}
-	
 	public JSONObject validateUser(Map<String, String[]> paramMap){
 		
 		String user = "";
 		if(paramMap.get("user")[0]!=null){
-			user = paramMap.get("user")[0];
+			user = paramMap.get("user")[0].trim();
 		}
 		
 		String password = "";
 		if(paramMap.get("password")[0]!=null){
-			password = paramMap.get("password")[0];
+			password = paramMap.get("password")[0].trim();
 		}
 				
 		String domain = "";
 		if(paramMap.get("domain")[0]!=null){
-			domain = paramMap.get("domain")[0];
+			domain = paramMap.get("domain")[0].trim();
 		}
 		
 		String mobile = "";
 		if(paramMap.get("mobile")[0] !=null){
-			mobile = paramMap.get("mobile")[0];
+			mobile = paramMap.get("mobile")[0].trim();
 		}
 		
 		String url = ""; 
 		if(paramMap.get("url")[0] !=null){
-			url = paramMap.get("url")[0] ;
+			url = paramMap.get("url")[0].trim() ;
 		}
 		
 		System.out.println("user:"+user+"\n password:"+password+ "\n domain:"+domain+ "\n mobile:"+mobile+"\n url:"+url);
@@ -107,36 +127,18 @@ public class ServerImp {
 			
 			// Create login XML file
 			String xml =  handler.createUserLoginXML(user, password, domain, mobile);
-			
-			System.out.println("----------------1");
 			// POST user login to OTM
 			postXML2OTM(url, xml);
-			System.out.println("-------------------------2");
+			// Read File from FTP location
+			InputStream inputfile = readShipmentData(domain, user, mobile);			
 			
-			
-			// TODO : validation from OTM Server using created XML
-			if (user.equalsIgnoreCase("CUST1") && domain.equalsIgnoreCase("MSMART")){ 
-				
-				//TODO: change with OTM Validation
-//				json = handler.parseShipmentXML("E:\\Projects\\01 mSmart App\\Shipment_group.xml");
-				
-//				Properties prop = PropertyUtil.getPropValues();	
-//				String filepath = prop.getProperty("SHIPMENT_FILE_LOCATION")+domain+"."+user+".xml";				
-//				System.out.println("---------- filepath for shipment XML ::"+filepath);
-				
-				InputStream inputfile = readShipmentData(domain, user, mobile);
-				
-				if(inputfile !=null){
-					json = handler.parseShipmentXML(inputfile);
-				} else{
-					json.put("info", "fail"); // TODO: may change JSON
-				}
-				System.out.println("------------json:"+json.length());
-				
-			}else{
+			if(inputfile !=null){				
+				// parse shipment data and send json to App
+				json = handler.parseShipmentXML(inputfile);
+			} else{			
+				// return fail for invalid user
 				json.put("info", "fail"); // TODO: may change JSON
-			}
-
+			}	
 			
 		} catch (JSONException e) {
 			logger.error("Error while creating user validation XML. "+e.getMessage());
@@ -150,23 +152,17 @@ public class ServerImp {
 	
 	private void postXML2OTM(String url, String xml){
 		try {				
-			String OTMURL = url.replaceFirst("glog.webserver.servlet.umt.Login", "glog.integration.servlet.WMServlet");
-			System.out.println("--------- OTMURL::"+OTMURL);
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-					
-			HttpPost postRequest = new HttpPost(OTMURL);
-System.out.println("--------------1--------");
+			String OTMURL = url.replaceFirst("glog.webserver.servlet.umt.Login", "glog.integration.servlet.WMServlet");			
+			DefaultHttpClient httpClient = new DefaultHttpClient();			
+			HttpPost postRequest = new HttpPost(OTMURL.trim());			
 			StringEntity body = new StringEntity(xml);
-			body.setContentType("application/raw");
-			System.out.println("--------------2--------");
+			body.setContentType("application/raw");			
 			postRequest.setEntity(body);
-			HttpResponse esbResponse = httpClient.execute(postRequest);
-			System.out.println("--------------3--------"+esbResponse.getStatusLine().getStatusCode());
+			HttpResponse esbResponse = httpClient.execute(postRequest);		
 
 			if (esbResponse.getStatusLine().getStatusCode() == 200){
 				System.out.println("user login file has been posted to OTM");
 			}
-
 		}
 		catch ( MalformedURLException ex ) {
 			ex.printStackTrace();
@@ -176,60 +172,60 @@ System.out.println("--------------1--------");
 		}
 	}
 	
-	public JSONObject addEvent(Map<String, String[]> paramMap){
-		System.out.println("--------user:"+paramMap.get("user")[0]);
-		System.out.println("--------password:"+paramMap.get("password")[0]);
-		System.out.println("--------domain:"+paramMap.get("domain")[0]);
-		System.out.println("--------action:"+paramMap.get("action")[0]);
-		System.out.println("--------shipment_id:"+paramMap.get("shipment_id")[0]);
-		System.out.println("--------truck_no:"+paramMap.get("truck_no")[0]);
-		System.out.println("--------event_type:"+paramMap.get("event_type")[0]);
-		System.out.println("--------stop_location:"+paramMap.get("stop_location")[0]);
-		System.out.println("--------current_location:"+paramMap.get("current_location")[0]);
-		System.out.println("--------current_dt_time:"+paramMap.get("current_dt_time")[0]);
-		System.out.println("--------remarks:"+paramMap.get("remarks")[0]);
-		
-		
+	public JSONObject addShipmentEvent(Map<String, String[]> paramMap){
+		System.out.println("-----test::"+paramMap.get("url")[0]);
+		String url = ""; 
+		if(paramMap.get("url")[0] !=null){
+			url = paramMap.get("url")[0].trim() ;
+		}
+		System.out.println("---------URL");
 		JSONObject json = new JSONObject();
 		try {
+			XMLFileHandler handler = new XMLFileHandler();
+			System.out.println("---------1");
+			String xml = handler.addShipmentEventXML(paramMap);
+			System.out.println("---------2");
+			postXML2OTM(url, xml);
 			json.put("info", "successful");
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error while posting add event XML to OTM Server. "+e.getMessage());
+			e.printStackTrace();			
 		} 
 		return json;
 	}
 	
 	public JSONObject setDeliveryStatus(Map<String, String[]> paramMap){
-		System.out.println("--------action:"+paramMap.get("action")[0]);
-		System.out.println("--------order_no:"+paramMap.get("order_no")[0]);
-		System.out.println("--------current_dt_time:"+paramMap.get("current_dt_time")[0]);
-		System.out.println("--------current_location:"+paramMap.get("current_location")[0]);
-		System.out.println("--------remarks:"+paramMap.get("remarks")[0]);
+		System.out.println("--------------setDeliveryStatus");
+		String url = ""; 
+		if(paramMap.get("url")[0] !=null){
+			url = paramMap.get("url")[0].trim() ;
+		}
 		JSONObject json = new JSONObject();
 		try {
+			XMLFileHandler handler = new XMLFileHandler();
+			String xml = handler.addOrderReleaseEventXML(paramMap);
+			postXML2OTM(url, xml);
 			json.put("info", "successful");
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error while posting shipment event XML to OTM Server. "+e.getMessage());
+			e.printStackTrace();			
 		} 
 		return json;
 	}
 	
 	private InputStream readShipmentData(String domain, String user, String mobile_number){
 		InputStream inputStream = null;
+		FTPClient ftp = new FTPClient();
 		try {
-			FTPClient ftp = new FTPClient();
+			
 			Properties prop = PropertyUtil.getPropValues();
 			String serverAddress = prop.getProperty("FTP_SERVER_ADDRESS").trim();
-//			String serverAddress = "speedtest.tele2.net";
 			String userId = prop.getProperty("userId").trim();
             String password = prop.getProperty("password").trim();
             String remoteDirectory = prop.getProperty("FTP_Directory").trim();
             int port = Integer.valueOf(prop.getProperty("FTP_SERVER_PORT").trim());
 			
-			ftp.connect(serverAddress, port);
-			System.out.println("-----------loging::"+ftp.login(userId, password));
+			ftp.connect(serverAddress, port);			
 			if(!ftp.login(userId, password)){
 				ftp.logout();
                 return inputStream;
@@ -260,39 +256,33 @@ System.out.println("--------------1--------");
                     if (!file.isFile()) {
                         continue;
                     }
-                    
-                    if(file.getName().startsWith(domain+"."+user+"_"+mobile_number)){
+//                    System.out.println("-----------ALL Files::"+file.getName());
+                    if(file.getName().startsWith((domain+"."+user).toUpperCase())){
                     	fileNames.add(file.getName());
-                    	System.out.println("File is " + file.getName());
+                    	System.out.println("Current File is " + file.getName());
                     }
-                   
-                   
-//                    //get output stream
-//                    OutputStream output;
-//                    output = new FileOutputStream(localDirectory + "/" + file.getName());
-//                    //get the file from the remote system
-//                    ftp.retrieveFile(file.getName(), output);
-//                    //close output stream
-//                    output.close();
-                   
-                    
-                   
                 }
+            } else{
+            	return inputStream;
             }
             
             // Read latest customer shipment data file
             Collections.sort(fileNames);
 //            FileInputStream fio = new FileInputStream(new File(fileNames.get(fileNames.size()-1)));
 //            BufferedInputStream io = new BufferedInputStream(fio);
-            inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
+            if(fileNames.size()>0){
+            	inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
+            }
 //            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-//            
+//            StringBuilder sb = new StringBuilder();
 //            String line ;
 //            while ((line = br.readLine())!= null){
 //            	sb.append(line);
 //            }
+//            System.out.println("------ shipment data::"+sb.toString());
+//            logger.debug("Shipment data:"+sb.toString());
             
-            ftp.logout();
+//            ftp.logout();
             ftp.disconnect();
 
             
@@ -304,6 +294,14 @@ System.out.println("--------------1--------");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}finally {
+		      if(ftp.isConnected()) {
+		          try {
+		            ftp.disconnect();
+		          } catch(IOException ioe) {
+		            // do nothing
+		          }
+		        }
 		}
 		return inputStream;
 		
