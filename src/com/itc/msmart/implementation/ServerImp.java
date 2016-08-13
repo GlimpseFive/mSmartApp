@@ -63,8 +63,8 @@ public class ServerImp {
 		ServerImp obj = new ServerImp();
 		
 //		obj.validateUser(map);
-		obj.addShipmentEvent(map);
-//		obj.setDeliveryStatus(map);
+//		obj.addShipmentEvent(map);
+		obj.setDeliveryStatus(map);
 		
 	}
 	
@@ -172,19 +172,15 @@ public class ServerImp {
 		}
 	}
 	
-	public JSONObject addShipmentEvent(Map<String, String[]> paramMap){
-		System.out.println("-----test::"+paramMap.get("url")[0]);
+	public JSONObject addShipmentEvent(Map<String, String[]> paramMap){		
 		String url = ""; 
 		if(paramMap.get("url")[0] !=null){
 			url = paramMap.get("url")[0].trim() ;
-		}
-		System.out.println("---------URL");
+		}		
 		JSONObject json = new JSONObject();
 		try {
-			XMLFileHandler handler = new XMLFileHandler();
-			System.out.println("---------1");
-			String xml = handler.addShipmentEventXML(paramMap);
-			System.out.println("---------2");
+			XMLFileHandler handler = new XMLFileHandler();			
+			String xml = handler.addShipmentEventXML(paramMap);			
 			postXML2OTM(url, xml);
 			json.put("info", "successful");
 		} catch (JSONException e) {
@@ -256,7 +252,7 @@ public class ServerImp {
                     if (!file.isFile()) {
                         continue;
                     }
-//                    System.out.println("-----------ALL Files::"+file.getName());
+//                    
                     if(file.getName().startsWith((domain+"."+user).toUpperCase())){
                     	fileNames.add(file.getName());
                     	System.out.println("Current File is " + file.getName());
@@ -268,21 +264,10 @@ public class ServerImp {
             
             // Read latest customer shipment data file
             Collections.sort(fileNames);
-//            FileInputStream fio = new FileInputStream(new File(fileNames.get(fileNames.size()-1)));
-//            BufferedInputStream io = new BufferedInputStream(fio);
             if(fileNames.size()>0){
             	inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
             }
-//            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-//            StringBuilder sb = new StringBuilder();
-//            String line ;
-//            while ((line = br.readLine())!= null){
-//            	sb.append(line);
-//            }
-//            System.out.println("------ shipment data::"+sb.toString());
-//            logger.debug("Shipment data:"+sb.toString());
-            
-//            ftp.logout();
+
             ftp.disconnect();
 
             

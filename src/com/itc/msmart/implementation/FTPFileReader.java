@@ -1,6 +1,10 @@
 package com.itc.msmart.implementation;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,7 +70,7 @@ public class FTPFileReader {
                         continue;
                     }
                     System.out.println("File is " + file.getName());
-                    if(file.getName().startsWith(domain+"."+user+"_"+mobile_number)){
+                    if(file.getName().startsWith(domain+"."+user)){
                     	fileNames.add(file.getName());
                     }
                    
@@ -92,12 +96,16 @@ public class FTPFileReader {
             InputStream inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
             
-//            String line ;
-//            while ((line = br.readLine())!= null){
-//            	sb.append(line);
-//            }
-//            
-            ftp.logout();
+            String line ;
+            while ((line = br.readLine())!= null){
+            	sb.append(line);
+            }
+            
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File("E:\\Shipment.xml")));
+            bw.write(sb.toString());
+            bw.close();
+            
+//            ftp.logout();
             ftp.disconnect();
 
             
