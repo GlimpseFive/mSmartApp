@@ -101,9 +101,9 @@ public class FTPFileReader {
             	sb.append(line);
             }
             
-            BufferedWriter bw = new BufferedWriter(new FileWriter(new File("E:\\Shipment.xml")));
-            bw.write(sb.toString());
-            bw.close();
+//            BufferedWriter bw = new BufferedWriter(new FileWriter(new File("E:\\Shipment.xml")));
+//            bw.write(sb.toString());
+//            bw.close();
             
 //            ftp.logout();
             ftp.disconnect();

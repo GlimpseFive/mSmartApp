@@ -255,7 +255,7 @@ public class ServerImp {
 //                    
                     if(file.getName().startsWith((domain+"."+user).toUpperCase())){
                     	fileNames.add(file.getName());
-                    	System.out.println("Current File is " + file.getName());
+//                    	System.out.println("Current File is " + file.getName());
                     }
                 }
             } else{
@@ -266,6 +266,7 @@ public class ServerImp {
             Collections.sort(fileNames);
             if(fileNames.size()>0){
             	inputStream = ftp.retrieveFileStream(fileNames.get(fileNames.size()-1));
+            	System.out.println("Current File is " + fileNames.get(fileNames.size()-1));
             }
 
             ftp.disconnect();
